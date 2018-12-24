@@ -1,6 +1,7 @@
 package org.brunodpo.dmx;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import com.fazecast.jSerialComm.SerialPort;
@@ -90,26 +91,26 @@ public class DMXCommunicator {
 
 	/**
 	 * Get a parameter value
-	 * @param index Parameter index (from 1 to 512)
+	 * @param index Parameter index (from 0 to 511)
 	 * @return Parameter value in bytes
-	 * @throws IndexOutOfBoundsException If the index is not between 1 and 512
+	 * @throws IndexOutOfBoundsException If the index is not between 0 and 511
 	 */
 	public byte getByte(int index) throws IndexOutOfBoundsException {
-		if (index < 1 || index > 512)
+		if (index < 0 || index > 511)
 			throw new IndexOutOfBoundsException("Index is not between 1 and 512");
 
 		synchronized (this) {
-			return buffer[index];
+			return buffer[index + 1];
 		}
 	}
 
 	/**
 	 * Get all the parameter values
-	 * @return The entire 513 byte vector
+	 * @return All 512 parameters as a vector
 	 */
 	public byte[] getBytes() {
 		synchronized (this) {
-			return buffer;
+			return Arrays.copyOfRange(buffer, 1, 513);
 		}
 	}
 
@@ -122,7 +123,7 @@ public class DMXCommunicator {
 		List<String> portNames = new ArrayList<String>();
 		for (SerialPort port : ports) {
 			try {
-				configureSerialPort(port);
+				//configureSerialPort(port);
 				portNames.add(port.getSystemPortName());
 			} catch (Exception e) { }
 		}
@@ -149,31 +150,30 @@ public class DMXCommunicator {
 
 	/**
 	 * Update a parameter value
-	 * @param index Parameter index (from 1 to 512)
+	 * @param index Parameter index (from 0 to 511)
 	 * @param value Parameter value
-	 * @throws IndexOutOfBoundsException If the index is not between 1 and 512
+	 * @throws IndexOutOfBoundsException If the index is not between 0 and 511
 	 */
 	public void setByte(int index, byte value) throws IndexOutOfBoundsException {
-		if (index < 1 || index > 512)
-			throw new IndexOutOfBoundsException("Index is not between 1 and 512");
+		if (index < 0 || index > 511)
+			throw new IndexOutOfBoundsException("Index is not between 0 and 511");
 
 		synchronized (this) {
-			buffer[index] = value;
+			buffer[index + 1] = value;
 		}
 	}
 
 	/**
 	 * Update all parameter values
-	 * @param newBuffer A 513 element vector with the first one being a zero
-	 * @throws IllegalArgumentException If the byte vector sent does not contain 513 elements
+	 * @param newBuffer A byte vector containing 512 elements
+	 * @throws IllegalArgumentException If the byte vector sent does not contain 512 elements
 	 */
 	public void setBytes(byte[] newBuffer) throws IllegalArgumentException {
-		if (newBuffer.length != 513)
-			throw new IllegalArgumentException("This byte vector does not contain 513 elements");
+		if (newBuffer.length != 512)
+			throw new IllegalArgumentException("This byte vector does not contain 512 elements");
 
-		newBuffer[0] = 0; // Grants that the first byte will be a zero
 		synchronized (this) {
-			buffer = newBuffer;
+			System.arraycopy(newBuffer, 0, buffer, 1, 512);
 		}
 	}
 
@@ -182,12 +182,11 @@ public class DMXCommunicator {
 	 */
 	public void start() {
 		// Prevents it from being started more than once
-		if (this.isActive)
-			return;
-
-		if (!serialPort.isOpen())
-			serialPort.openPort();
 		synchronized(this) {
+			if (this.isActive)
+				return;
+			if (!serialPort.isOpen())
+				serialPort.openPort();
 			this.isActive = true;
 		}
 		senderThread = new Thread(sendBytes);
@@ -199,12 +198,12 @@ public class DMXCommunicator {
 	 */
 	public void stop() {
 		// Prevents it from being stopped more than once
-		if (!this.isActive)
-			return;
-
 		synchronized(this) {
+			if (!this.isActive)
+				return;
 			this.isActive = false;
 		}
+
 		try {
 			senderThread.join(1000);
 		} catch(Exception e) { }
