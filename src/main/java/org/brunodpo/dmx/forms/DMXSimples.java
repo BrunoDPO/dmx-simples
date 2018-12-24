@@ -12,6 +12,7 @@ import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JSlider;
 import javax.swing.JSpinner;
@@ -31,7 +32,7 @@ public class DMXSimples {
 	
 	private static final int NUMBER_OF_CHANNELS = 32;
 
-	private static byte[] buffer = new byte[513];
+	private static byte[] buffer = new byte[512];
 	private static DMXCommunicator dmxCommunicator = null;
 
 	private static void createAndShowGUI() {
@@ -79,7 +80,7 @@ public class DMXSimples {
 			CombinedChangeListener listener = new CombinedChangeListener(slider[i], spinner[i]);
 			slider[i].addChangeListener(listener);
 			spinner[i].addChangeListener(listener);
-			final int index = (i + 1);
+			final int index = i;
 			spinner[i].addChangeListener(new ChangeListener() {
 				@Override
 				public void stateChanged(ChangeEvent e) {
@@ -133,7 +134,9 @@ public class DMXSimples {
 					serialPortCombo.setEnabled(!serialPortCombo.isEnabled());
 					startButton.setEnabled(!startButton.isEnabled());
 					stopButton.setEnabled(!stopButton.isEnabled());
-				} catch (Exception ex) { }
+				} catch (Exception ex) {
+					JOptionPane.showMessageDialog(null, ex.getMessage(), "Erro", JOptionPane.ERROR_MESSAGE);
+				}
 				
 			}
 		});
