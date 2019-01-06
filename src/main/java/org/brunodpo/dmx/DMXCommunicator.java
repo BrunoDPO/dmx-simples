@@ -97,7 +97,7 @@ public class DMXCommunicator {
 	 */
 	public byte getByte(int index) throws IndexOutOfBoundsException {
 		if (index < 0 || index > 511)
-			throw new IndexOutOfBoundsException("Index is not between 1 and 512");
+			throw new IndexOutOfBoundsException("Index is not between 0 and 511");
 
 		synchronized (this) {
 			return buffer[index + 1];
