@@ -1,7 +1,9 @@
 # dmx-simples
-*Author: Bruno Di Prinzio de Oliveira
+*Author: Bruno Di Prinzio de Oliveira*
 
-## Description
+[![Build Status](https://brunodpo.visualstudio.com/dmx-simples/_apis/build/status/BrunoDPO.dmx-simples?branchName=master)](https://brunodpo.visualstudio.com/dmx-simples/_build/latest?definitionId=6&branchName=master)
+
+### Description
 Java implementation of the DMX-512 protocol (with a simple GUI)
 
 ### External Packages
