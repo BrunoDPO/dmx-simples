@@ -10,6 +10,7 @@ import javax.swing.event.ChangeListener;
  * <p>
  * v.1.0.0 - Initial release
  * </p>
+ * 
  * @author Bruno Di Prinzio de Oliveira
  * @version 1.0.0
  * @since 2018-05-01
@@ -26,11 +27,12 @@ public class CombinedChangeListener implements ChangeListener {
 
 	@Override
 	public void stateChanged(ChangeEvent e) {
-		if (slider.getValue() == (int)spinner.getValue())
+		// Prevents the update from looping forever
+		if (slider.getValue() == (int) spinner.getValue())
 			return;
 		if (e.getSource() instanceof JSlider)
 			spinner.setValue(slider.getValue());
 		if (e.getSource() instanceof JSpinner)
-			slider.setValue((int)spinner.getValue());
+			slider.setValue((int) spinner.getValue());
 	}
 }

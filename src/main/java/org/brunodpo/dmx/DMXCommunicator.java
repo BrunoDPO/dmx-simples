@@ -16,12 +16,15 @@ import com.fazecast.jSerialComm.SerialPort;
 // 01000010 01110010 01110101 01101110 01101111 01000100 01010000 01001111
 
 /**
- * This class implements the DMX Communication Protocol over a Serial Port.
- * It is recommended for this class to work that you either buy or make a
- * RS232 to RS485 converter.
+ * This class implements the DMX512 Communication Protocol over a Serial Port.
+ * It is recommended for this class to work that you either buy or make a RS232
+ * to RS485 converter based on the FTDI chip. Such specification is needed
+ * because it's the only one that can reach the high baud rate needed for the
+ * protocol.
  * <p>
  * v.1.0.0 - Initial release
  * </p>
+ * 
  * @author Bruno Di Prinzio de Oliveira
  * @version 1.0.0
  * @since 2018-05-01
@@ -34,16 +37,23 @@ public class DMXCommunicator {
 	private SerialPort serialPort;
 
 	/**
+	 * Default baud rate for the DMX512 Protocol
+	 */
+	public static final int DMX512_BAUD_RATE = 250000;
+
+	/**
 	 * Initialize a DMXCommunicator class
+	 * 
 	 * @param portName Name of the serial port as a string
 	 * @throws Exception If the serial port is somehow inaccessible
 	 */
 	public DMXCommunicator(String portName) throws Exception {
 		this(SerialPort.getCommPort(portName));
 	}
-	
+
 	/**
 	 * Initialize a DMXCommunicator class
+	 * 
 	 * @param port Instance of a SerialPort
 	 * @throws Exception If the serial port is somehow inaccessible
 	 */
@@ -53,8 +63,9 @@ public class DMXCommunicator {
 	}
 
 	/**
-	 * Set a connection and try to open it to see if the port is
-	 * compatible with the DMX512 protocol. 
+	 * Set up a connection and try to open it to see if the port is compatible with
+	 * the DMX512 protocol.
+	 * 
 	 * @param port Serial port instance
 	 * @return The referenced serial port instance
 	 * @throws Exception If the serial port is somehow inaccessible
@@ -65,12 +76,12 @@ public class DMXCommunicator {
 				port.closePort();
 
 			// Port configuration
-			port.setComPortParameters(250000, 8, SerialPort.TWO_STOP_BITS, SerialPort.NO_PARITY);
+			port.setComPortParameters(DMX512_BAUD_RATE, 8, SerialPort.TWO_STOP_BITS, SerialPort.NO_PARITY);
 
 			// Try to open a connection with the given settings
 			boolean success = port.openPort();
 			if (!success)
-				throw new Exception("Could not open the serial port with the DMX parameters.");
+				throw new Exception("Could not open the serial port with the DMX512 parameters.");
 			port.closePort();
 		} catch (Exception e) {
 			throw e;
@@ -80,7 +91,8 @@ public class DMXCommunicator {
 	}
 
 	/**
-	 * Returns the state of the connection
+	 * Return the state of the connection
+	 * 
 	 * @return True if the communication is active
 	 */
 	public boolean isActive() {
@@ -91,6 +103,7 @@ public class DMXCommunicator {
 
 	/**
 	 * Get a parameter value
+	 * 
 	 * @param index Parameter index (from 0 to 511)
 	 * @return Parameter value in bytes
 	 * @throws IndexOutOfBoundsException If the index is not between 0 and 511
@@ -105,8 +118,9 @@ public class DMXCommunicator {
 	}
 
 	/**
-	 * Get all the parameter values
-	 * @return All 512 parameters as a vector
+	 * Get all the parameter values as a byte array
+	 * 
+	 * @return All 512 parameters as a byte array
 	 */
 	public byte[] getBytes() {
 		synchronized (this) {
@@ -115,7 +129,8 @@ public class DMXCommunicator {
 	}
 
 	/**
-	 * List all DMX-compatible serial ports
+	 * List all DMX512-compatible serial ports
+	 * 
 	 * @return A list of all valid serial ports
 	 */
 	public static List<String> getValidSerialPorts() {
@@ -123,9 +138,10 @@ public class DMXCommunicator {
 		List<String> portNames = new ArrayList<String>();
 		for (SerialPort port : ports) {
 			try {
-				//configureSerialPort(port);
+				configureSerialPort(port);
 				portNames.add(port.getSystemPortName());
-			} catch (Exception e) { }
+			} catch (Exception e) {
+			}
 		}
 		return portNames;
 	}
@@ -140,7 +156,8 @@ public class DMXCommunicator {
 				serialPort.setBreak();
 				try {
 					Thread.sleep(1);
-				} catch(Exception e) { }
+				} catch (Exception e) {
+				}
 				serialPort.clearBreak();
 				// Send all the byte parameters
 				serialPort.writeBytes(buffer, buffer.length);
@@ -150,6 +167,7 @@ public class DMXCommunicator {
 
 	/**
 	 * Update a parameter value
+	 * 
 	 * @param index Parameter index (from 0 to 511)
 	 * @param value Parameter value
 	 * @throws IndexOutOfBoundsException If the index is not between 0 and 511
@@ -165,12 +183,13 @@ public class DMXCommunicator {
 
 	/**
 	 * Update all parameter values
-	 * @param newBuffer A byte vector containing 512 elements
-	 * @throws IllegalArgumentException If the byte vector sent does not contain 512 elements
+	 * 
+	 * @param newBuffer A byte array containing 512 elements
+	 * @throws IllegalArgumentException If the byte array sent does not contain 512 elements
 	 */
 	public void setBytes(byte[] newBuffer) throws IllegalArgumentException {
 		if (newBuffer.length != 512)
-			throw new IllegalArgumentException("This byte vector does not contain 512 elements");
+			throw new IllegalArgumentException("This byte array does not contain 512 elements");
 
 		synchronized (this) {
 			System.arraycopy(newBuffer, 0, buffer, 1, 512);
@@ -182,15 +201,20 @@ public class DMXCommunicator {
 	 */
 	public void start() {
 		// Prevents it from being started more than once
-		synchronized(this) {
-			if (this.isActive)
-				return;
-			if (!serialPort.isOpen())
-				serialPort.openPort();
-			this.isActive = true;
+		if (!this.isActive) {
+			synchronized (this) {
+				if (!this.isActive) {
+					boolean isOpened = serialPort.isOpen();
+					if (!isOpened)
+						isOpened = serialPort.openPort();
+					this.isActive = isOpened;
+					if (isOpened) {
+						senderThread = new Thread(sendBytes);
+						senderThread.start();
+					}
+				}
+			}
 		}
-		senderThread = new Thread(sendBytes);
-		senderThread.start();
 	}
 
 	/**
@@ -198,16 +222,18 @@ public class DMXCommunicator {
 	 */
 	public void stop() {
 		// Prevents it from being stopped more than once
-		synchronized(this) {
-			if (!this.isActive)
-				return;
-			this.isActive = false;
+		if (this.isActive) {
+			synchronized (this) {
+				if (this.isActive) {
+					this.isActive = false;
+					try {
+						senderThread.join(1000);
+					} catch (Exception e) {
+					}
+					if (serialPort.isOpen())
+						serialPort.closePort();
+				}
+			}
 		}
-
-		try {
-			senderThread.join(1000);
-		} catch(Exception e) { }
-		if (serialPort.isOpen())
-			serialPort.closePort();
 	}
 }
