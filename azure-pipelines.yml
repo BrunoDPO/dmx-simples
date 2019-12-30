@@ -6,7 +6,16 @@
 name: 'dmx-simples-CI'
 
 trigger:
-- master
+  branches:
+   include:
+       - master
+  paths:
+   exclude:
+       - LICENSE
+       - README.md
+       - '**/.*'
+
+pr: none
 
 pool:
   vmImage: 'ubuntu-latest'
@@ -30,6 +39,7 @@ steps:
     SourceFolder: '$(Build.Repository.LocalPath)/target/'
     Contents: '**/*.jar'
     TargetFolder: '$(Build.ArtifactStagingDirectory)'
+    CleanTargetFolder: true
 
 - task: PublishBuildArtifacts@1
   displayName: 'Publish Package'
