@@ -47,12 +47,3 @@ steps:
     PathtoPublish: '$(Build.ArtifactStagingDirectory)'
     ArtifactName: 'dmx-simples'
     publishLocation: 'Container'
-
-- task: GitHubRelease@0
-  displayName: 'Create GitHub Release'
-  inputs:
-    gitHubConnection: BrunoDPO
-    repositoryName: BunoDPO/dmx-simples
-    tagSource: manual
-    tag: $(Build.BuildNumber)
-    assets: '$(Build.ArtifactStagingDirectory)/*.zip'
